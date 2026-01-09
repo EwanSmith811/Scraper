@@ -4,6 +4,19 @@ from fastapi.concurrency import run_in_threadpool
 import os
 import traceback
 import nest_asyncio
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Add this block to allow your Vercel app to talk to Koyeb
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For development; change to your Vercel URL later for security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Apply the patch (This now works because we forced --loop asyncio)
 nest_asyncio.apply()
@@ -49,3 +62,4 @@ async def scrape(req: ScrapeRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
