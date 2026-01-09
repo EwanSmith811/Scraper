@@ -1,29 +1,21 @@
+# 1. Use the official Playwright-Python image (includes Chromium)
 FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
+# 2. Set the working directory
 WORKDIR /app
 
-# Copy project files
+# 3. Copy everything into the container
 COPY . /app
 
-# Install python dependencies
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" scrapegraphai
+# 4. Install your Python dependencies
+# We use -r requirements.txt to be professional and consistent
+RUN pip install --no-cache-dir -r requirements.txt
 
+# 5. Link Playwright to the browsers already in the image
+RUN playwright install chromium
+
+# 6. Expose the port FastAPI runs on
 EXPOSE 8000
 
+# 7. Start the API
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-
-RUN npm run build
-
-EXPOSE 3000
-
-ENV NODE_ENV=production
-
-CMD ["npm", "start"]
