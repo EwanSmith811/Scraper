@@ -5,7 +5,7 @@ import os
 import traceback
 import nest_asyncio
 
-# Apply the patch
+# Apply the patch (This now works because we forced --loop asyncio)
 nest_asyncio.apply()
 
 app = FastAPI(title="ScrapeGraphAI Service")
@@ -13,7 +13,6 @@ app = FastAPI(title="ScrapeGraphAI Service")
 class ScrapeRequest(BaseModel):
     url: str
 
-# This helper function contains the actual scraping logic
 def perform_scrape(target_url, api_key):
     from scrapegraphai.graphs import SmartScraperGraph
     
@@ -43,8 +42,7 @@ async def scrape(req: ScrapeRequest):
         if not api_key:
             raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
 
-        # run_in_threadpool runs the sync function in a separate thread
-        # This prevents the 'asyncio.run' event loop conflict
+        # Run the scrape in a separate thread
         result = await run_in_threadpool(perform_scrape, req.url, api_key)
         return result
         
