@@ -2,22 +2,23 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 import traceback
+import nest_asyncio # 1. Import nest_asyncio
+
+# 2. Apply the patch to allow nested event loops
+nest_asyncio.apply()
 
 app = FastAPI(title="ScrapeGraphAI Service")
-
 
 class ScrapeRequest(BaseModel):
     url: str
 
-
 @app.post("/scrape")
-async def scrape(req: ScrapeRequest):
+def scrape(req: ScrapeRequest): # 3. Changed 'async def' to 'def'
     try:
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
-            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set in environment")
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
 
-        # Import here to avoid import-time dependency issues during container build
         from scrapegraphai.graphs import SmartScraperGraph
 
         graph_config = {
@@ -33,15 +34,14 @@ async def scrape(req: ScrapeRequest):
         prompt = (
             "Extract happy hour information. Return a JSON object with this structure: "
             '{"happyHours": [{"days": ["Mon", "Tue"], "startTime": "15:00", "endTime": "18:00", "deals": ["Pints $3"]}]}. '
-            "Days must use 3-letter abbreviations (Mon, Tue, Wed, Thu, Fri, Sat, Sun). "
-            "Times must be 24-hour format HH:MM. If no happy hour found, return empty array."
+            "Days must use 3-letter abbreviations. Times must be 24-hour format HH:MM."
         )
 
         graph = SmartScraperGraph(prompt=prompt, source=req.url, config=graph_config)
-        result = graph.run()
+        
+        # This now runs without the 'asyncio.run' conflict
+        result = graph.run() 
         return result
-    except HTTPException:
-        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
