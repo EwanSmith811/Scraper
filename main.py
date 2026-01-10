@@ -6,7 +6,25 @@ import traceback
 import nest_asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import json
 
+# Add these new endpoints to your Koyeb main.py
+@app.get("/venues")
+def get_venues():
+    try:
+        with open("venues.json", "r") as f:
+            return json.load(f)
+    except:
+        return []
+
+@app.get("/scrape-progress")
+def get_progress():
+    # You'll need to update a global dictionary or file during your scrape() function
+    try:
+        with open("progress.json", "r") as f:
+            return json.load(f)
+    except:
+        return {"current": 0, "total": 0, "runId": "none", "done": False}
 app = FastAPI()
 
 # Add this block to allow your Vercel app to talk to Koyeb
@@ -62,4 +80,5 @@ async def scrape(req: ScrapeRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
